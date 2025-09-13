@@ -1,0 +1,18 @@
+#Question 11
+#GNUPplot graph of the Yearly Land Average Temperatures vs Yearly Land and Ocean Average Temperatures for the years 1850 to 2015
+
+#Setting the Names of the Title, X-Axis, and Y-Axis
+set title "Yearly Land Average Temperatures vs Yearly Land and Ocean Average Temperatures (1850-2015)"
+set xlabel "Year"
+set ylabel "Temperature (°C)"
+
+#Setting the ranges for the X-Axis
+set xrange [1850:2015]
+
+#Selecting the settings of the line style
+set style line 1 lc rgb 'blue' 
+set style line 2 lc rgb 'red' 
+
+#Plotting the data by reading the values on the second and third column of the data file and applying the Bar style with labeling the data within a legend
+plot "Q11_AVG_LandTemp_Yearly.txt" using 1:2 with lines linestyle 1 title 'Land Average Temp', \
+     "" using 1:3 with lines linestyle 2 title 'Land and Ocean Average Temp'
