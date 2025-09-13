@@ -1,0 +1,568 @@
+/********************************************************************
+ * Climate Data Analyzer
+ * 
+ * This program analyzes historical temperature data to calculate and
+ * report yearly and century averages, identify the hottest and coldest
+ * months and years, and provide monthly temperature averages between
+ * 1900 and 2015. The data spans from the year 1760 to 2015, offering
+ * insights into climate trends over the last few centuries.
+ * 
+ * Authors: Obeyad Obeyad, Rokieth Uthayaseelan,  Kamal Borno, and Taha
+ * Hussain 
+ * Date: April 2nd, 2024
+ * 
+ * Usage: Compile and run this program with a dataset named
+ * "GlobalTemperatures.csv" in the same directory. The output includes
+ * several text files containing the analyzed results and summaries
+ * printed to the console.
+ ********************************************************************/
+// Global Variables & Libraries
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define START_YEAR 1760
+#define END_YEAR 2015
+#define MAX_YEARS (END_YEAR - START_YEAR + 1)
+
+#define CENTURY_LENGTH 100  // Number of years in a century
+double avg19th[CENTURY_LENGTH] = {0};
+double avg20th[CENTURY_LENGTH] = {0};
+int count19th[CENTURY_LENGTH] = {0};
+int count20th[CENTURY_LENGTH] = {0};
+
+const char *month_names[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+// Please Note: The code for this program was written by the authors and this project was split
+//               into 4 parts and for each part one author was responsible for. This resulted 
+//               in discovering mutliple ways to get to the same solution. This is evident in 
+//               the reading the .csv file multiple times and parsing it using different methods.
+
+
+
+
+// Question 8 & 9 are completed in a similar manner as to why the code for these two questions
+// are in the same place. They will have a small header mentioning the code thats unique to  
+
+double annual_temps_sum[MAX_YEARS] = {0};
+int annual_temps_count[MAX_YEARS] = {0};
+
+// Question 8 arrays to store temperature data for each year.
+double avgTemps[MAX_YEARS];
+double maxTemps[MAX_YEARS];
+double minTemps[MAX_YEARS];
+int counts[MAX_YEARS]; // Count of records per year to calculate the average.
+
+// Question 9 arrays to store aggregated century data.
+double centuryAvgTemp[3] = {0.0, 0.0, 0.0};
+double centuryMaxTemp[3] = {0.0, 0.0, 0.0};
+double centuryMinTemp[3] = {0.0, 0.0, 0.0};
+int centuryCounts[3] = {0, 0, 0};
+
+
+
+// Question 9 function to get the index of the century array based on the year.
+int getCenturyIndex(int year) {
+    if (year < 1900) return 0; // 19th century
+    else if (year < 2000) return 1; // 20th century
+    else return 2; // 21st century
+}
+
+// Question 8 & 9 function to parse a line of the CSV and update the temperature data.
+int parseLine(char* line, int yearIdx) {
+    // Tokenize the line to extract year and temperature values.
+    char* token = strtok(line, ",");
+    int year = atoi(token);
+    if (year < 1850 || year > 2015) return 0; // Filter out years outside the range of interest.
+
+    token = strtok(NULL, ","); // Get LandAverageTemperature.
+    double avgTemp = atof(token);
+
+    token = strtok(NULL, ","); // Skip column.
+    token = strtok(NULL, ","); // Get LandMaxTemperature.
+    double maxTemp = atof(token);
+
+    token = strtok(NULL, ","); // Skip column.
+    token = strtok(NULL, ","); // Get LandMinTemperature.
+    double minTemp = atof(token);
+
+    // Determine the century index for the current record.
+    int centuryIdx = getCenturyIndex(year);
+
+    // Update year-specific temperature data.
+    avgTemps[yearIdx] += avgTemp;
+    maxTemps[yearIdx] += maxTemp;
+    minTemps[yearIdx] += minTemp;
+    counts[yearIdx]++;
+
+    // Update century-specific temperature data.
+    centuryAvgTemp[centuryIdx] += avgTemp;
+    centuryMaxTemp[centuryIdx] += maxTemp;
+    centuryMinTemp[centuryIdx] += minTemp;
+    centuryCounts[centuryIdx]++;
+
+    return 1; // Return 1 to indicate successful parsing of the line.
+}
+
+  int main(void) {
+
+    printf("===========================================================\n");
+    printf(" Welcome to the Climate Explorer!\n");
+    printf(" Dive into centuries of temperature data with us.\n");
+    printf("===========================================================\n");
+
+    // Open the file
+    FILE *temp_data_file = fopen("GlobalTemperatures.csv", "r");
+    if (temp_data_file == NULL) {
+      printf("Oops! We encountered an issue opening the temperature data file.\n");
+      exit(-1);
+    }
+
+    char line_buffer[1000];
+
+    // ------------------------------------------------------------------
+    // Question 1: Yearly averages calculation
+    // Variables for yearly averages
+    char extracted_year[5], extracted_month[3];
+    int extracted_year_int, extracted_month_int;
+    float extracted_temp;
+    float annual_temps_sum[END_YEAR - START_YEAR + 1] = {0};
+    int annual_temps_count[END_YEAR - START_YEAR + 1] = {0};
+
+    // ------------------------------------------------------------------
+    // Question 2: Century averages calculation
+    // Variables for century averages
+    float century_avg_temps[4] = {0}; // 18th, 19th, 20th, 21st century
+    int century_temps_count[4] = {0}; // 18th, 19th, 20th, 21st century
+
+    // ------------------------------------------------------------------
+    // Question 3: Monthly averages calculation
+    // Variables for monthly averages
+    float monthly_temps_sum[12] = {0}; // Sum of temperatures for each month
+    int monthly_temps_count[12] = {0}; // Number of temperature readings for each month
+
+    // Variables for tracking hottest and coldest months
+    float max_temp  = -1000, min_temp  = 1000;
+    char warmest_month[20], coldest_month[20];
+    int warmest_month_year, coldest_month_year;
+
+    // Variables for hottest and coldest years (Question 5)
+    float warmest_year_temp = -1000, coldest_year_temp = 1000;
+    int warmest_year, coldest_year;
+
+
+    // Skip header lines
+    for (int i = 0; i < 121; i++) {
+      fgets(line_buffer, sizeof(line_buffer), temp_data_file);
+    }
+
+
+    // ------------------------------------------------------------------
+    // Main data processing loop
+    while(fgets(line_buffer, sizeof(line_buffer), temp_data_file)){
+      sscanf(line_buffer, "%4s-%2s-%*2s,%f", extracted_year, extracted_month, &extracted_temp);
+      extracted_year_int = atoi(extracted_year);
+      extracted_month_int = atoi(extracted_month);
+      if (extracted_year_int < START_YEAR || extracted_year_int > END_YEAR) continue;
+
+
+      // Question 1: Yearly Averages Calculation
+      int year_index = extracted_year_int - START_YEAR;
+      annual_temps_sum[year_index] += extracted_temp;
+      annual_temps_count[year_index]++;
+
+        // Question 2: Century Averages Calculation
+      int index;
+      if (extracted_year_int <= 1799) {
+          index = 0; // 18th century
+      } else if (extracted_year_int <= 1899) {
+          index = 1; // 19th century
+      } else if (extracted_year_int <= 1999) {
+          index = 2; // 20th century
+      } else {
+          index = 3; // 21st century
+      }
+      century_avg_temps[index] += extracted_temp;
+      century_temps_count[index]++;
+
+      // Question 3: Monthly Averages Calculation
+
+      if (extracted_year_int >= 1900 && extracted_year_int <= 2015) {
+          monthly_temps_sum[extracted_month_int - 1] += extracted_temp;
+          monthly_temps_count[extracted_month_int - 1]++;
+      }
+
+      // Questions 4, 5: Identifying Hottest and Coldest Months/Years
+      if (extracted_temp > max_temp) {
+        max_temp = extracted_temp;
+        strcpy(warmest_month, month_names[extracted_month_int - 1]);
+        warmest_month_year = extracted_year_int;
+      }
+      if (extracted_temp < min_temp) {
+        min_temp = extracted_temp;
+        strcpy(coldest_month, month_names[extracted_month_int - 1]);
+        coldest_month_year = extracted_year_int;
+      }
+      int year = atoi(extracted_year) - START_YEAR;
+      if(year >= 0 && year < MAX_YEARS) {
+          annual_temps_sum[year] += extracted_temp;
+          annual_temps_count[year]++;
+      }
+    }
+    
+    fclose(temp_data_file);
+
+    // For Aesthetic reasons (simulates a loading screen environment)
+    printf("Analysing data...\n");
+
+    // Simulate loading with dots
+    for(int i = 0; i < 85; i++) {
+        printf(".");
+    }
+    printf("\nData analysis complete!\n");
+
+    // Question 6 has GNU Plot of using datafiles of Question 1. 
+    // Data Processing for Question 7
+    for (int i = 0; i < MAX_YEARS; i++) {
+        int year = START_YEAR + i;
+        int yearMod100 = year % 100;
+        if (year >= 1800 && year < 1900) {
+            if (annual_temps_count[i] > 0) {
+                avg19th[yearMod100] = annual_temps_sum[i] / annual_temps_count[i];
+                count19th[yearMod100] = 1;  // Mark this year as having data
+            }
+        } else if (year >= 1900 && year < 2000) {
+            if (annual_temps_count[i] > 0) {
+                avg20th[yearMod100] = annual_temps_sum[i] / annual_temps_count[i];
+                count20th[yearMod100] = 1;  // Mark this year as having data
+            }
+        }
+    }
+
+// ------------------------------------------------------------------
+  // Processing and Output Files for Questions (1-5)
+
+  // Question 1: Write Yearly Averages to a File
+
+    printf("\n------------------ Question 1 ----------------------\n");
+    FILE *yearly_averages_file = fopen("Q1_Yearly_averages.txt", "w");
+    if (yearly_averages_file == NULL) {
+        fprintf(stderr, "Error opening yearly averages file.\n");
+        return 1;
+    }
+    fprintf(yearly_averages_file, "Year\tAverage Temperature\n");
+
+    printf("The whole dataset for Question 1 is too large to display in the console.\n Please check the file 'Q1_Yearly_averages.txt' for the results.\n");
+    printf("First 10 Yearly Average Temperatures:\n");
+
+    // Temporary storage for the last 10 yearly averages
+    float last_10_temps[10] = {0};
+    int last_10_years[10] = {0};
+
+    int total_years = 0; // Total number of years with data
+    for (int i = 0; i < END_YEAR - START_YEAR + 1; i++) {
+        if (annual_temps_count[i] > 0) {
+            float avg_temp = annual_temps_sum[i] / annual_temps_count[i];
+            fprintf(yearly_averages_file, "%d\t%f\n", START_YEAR + i, avg_temp);
+
+            // Update the last 10 entries
+            if (total_years < 10) {
+                // Print the first 10 yearly averages
+                printf("%d\t%f\n", START_YEAR + i, avg_temp);
+            } else if (total_years >= (END_YEAR - START_YEAR + 1) - 10) {
+                // Shift the last 10 entries down and insert the new entry
+                for (int j = 1; j < 10; j++) {
+                    last_10_years[j-1] = last_10_years[j];
+                    last_10_temps[j-1] = last_10_temps[j];
+                }
+                last_10_years[9] = START_YEAR + i;
+                last_10_temps[9] = avg_temp;
+            }
+
+            total_years++;
+
+            // Update warmest and coldest year temperatures
+            if (avg_temp > warmest_year_temp) {
+                warmest_year_temp = avg_temp;
+                warmest_year = START_YEAR + i;
+            }
+            if (avg_temp < coldest_year_temp) {
+                coldest_year_temp = avg_temp;
+                coldest_year = START_YEAR + i;
+            }
+        }
+    }
+    fclose(yearly_averages_file);
+
+    // Print the last 10 yearly averages
+    printf("\nLast 10 Yearly Average Temperatures:\n");
+    for (int i = 0; i < 10; i++) {
+        if (last_10_years[i] > 0) { // Ensures we only print valid entries
+            printf("%d\t%f\n", last_10_years[i], last_10_temps[i]);
+        }
+    }
+
+    // Yearly Averages
+
+    printf("-> Yearly Average temperature insights ready for exploration\n in 'Q1_Yearly_averages.txt'.\n");
+
+
+  // ------------------------------------------------------------------
+  // Question 2: Write Century Averages to a File
+    printf("\n------------------ Question 2 ----------------------\n");
+    printf("\nCentury Averages:\n");
+    printf("Century\tAverageTemperature\n");
+    for (int i = 0; i < 4; i++) {
+        if (century_temps_count[i] > 0) {
+            float avg_temp = century_avg_temps[i] / century_temps_count[i];
+            printf("%dth\t  %f\n", i + 18, avg_temp);
+        }
+    }
+
+    // Century Averages
+
+
+  // ------------------------------------------------------------------
+  // Monthly Averages
+  // Question 3: Write Monthly Averages to a File
+    printf("\n------------------ Question 3 ----------------------\n");
+    printf("\nMonthly Averages:\n");
+    printf( "Month\tAverageTemperature\n");
+    for (int i = 0; i < 12; i++) {
+        if (monthly_temps_count[i] > 0) {
+            float avg_temp = monthly_temps_sum[i] / monthly_temps_count[i];
+            printf("%s\t  %f\n", month_names[i], avg_temp);
+        }
+    }
+
+
+  // ------------------------------------------------------------------
+  // Question 4: Report Hottest and Coldest Months
+    // Hottest and Coldest Months
+    printf("\n------------------ Question 4 ----------------------\n");
+    printf("-> The hottest month on record was %s %d with a blistering %f C.\n", warmest_month, warmest_month_year, max_temp);
+    printf("-> The coldest month ever recorded was %s %d, chilling at %f C.\n", coldest_month, coldest_month_year, min_temp);
+
+  // ------------------------------------------------------------------
+  // Question 5: Identify and Report Hottest and Coldest Years
+    // Hottest and Coldest Years
+    printf("\n------------------ Question 5 ----------------------\n");
+    printf("-> The hottest year on record was %d with an average temperature of %f C.\n", warmest_year, warmest_year_temp);
+    printf("-> The coldest year recorded was %d with an average temperature of %f C.\n", coldest_year, coldest_year_temp);
+
+
+    // ------------------------------------------------------------------
+    // Processing and Output Files for Questions (6, 7, 8, 9)
+
+    // Question 6: Write Yearly Averages to a File
+    printf("\n------------------ Question 6 ----------------------\n");
+    printf("Data for Q6 GNUPlot prepared in 'Q1_Yearly_averages.txt'.\n");
+    // Question 7: Identify and Report Hottest and Coldest Years
+
+    printf("\n------------------ Question 7 ----------------------\n");
+    FILE *Q7_19_20_Centuries = fopen("Q7_19_20_Centuries.txt", "w");
+    if (!Q7_19_20_Centuries) {
+        printf("Error opening file to write century data.\n");
+        return -1;
+    }
+
+    // Write the aligned 19th and 20th-century data
+    for (int i = 0; i < CENTURY_LENGTH; i++) {
+        if (count19th[i] > 0 || count20th[i] > 0) {  // Check if there's data for either century
+            fprintf(Q7_19_20_Centuries, "%d %f %f\n", i, avg19th[i], avg20th[i]);
+        }
+    }
+
+    fclose(Q7_19_20_Centuries);
+    printf("Data for GNUPlot prepared in 'Q7_19_20_Centuries.txt'.\n");
+
+
+
+
+    // ++++++++++++++++++++++++++++++++ Question 8 & 9 ++++++++++++++++++++++++++++++++++
+    // Processing and Output Files for Questions (8 & 9)
+
+    // Attempt to open the CSV file used to answer both questions.
+    FILE* file = fopen("GlobalTemperatures.csv", "r");
+    if (!file) {
+        printf("File could not be opened.\n");
+        return -1;
+    }
+
+    char line[1024]; // Buffer to store lines read from the CSV.
+    fgets(line, sizeof(line), file); // Skip the header line.
+
+    // Read and process each line of the CSV file.
+    while (fgets(line, sizeof(line), file)) {
+        // Calculate the index for the year.
+        int yearIdx = atoi(line) - 1850; // Assuming the first column is the year.
+        if (yearIdx >= 0 && yearIdx < MAX_YEARS) {
+            parseLine(line, yearIdx);
+        }
+    }
+
+    // Close the file as we have finished reading it.
+    fclose(file);
+
+
+    // Question 8: Calculate individual year averages and write them to a file.
+    printf("\n------------------ Question 8 ----------------------\n");
+
+    FILE* Q8_outFile = fopen("Q8_Temperature_averages.txt", "w");
+    if (!Q8_outFile) {
+      printf("Error opening output file.\n");
+      return -1;
+    }
+
+    fprintf(Q8_outFile, "Year Avg      Max       Min\n"); // Write header to file.
+    for (int i = 0; i < MAX_YEARS; i++) {
+      if (counts[i] > 0) {
+          // Calculate the average for each year.
+          double yearAvg = avgTemps[i] / counts[i];
+          double yearMax = maxTemps[i] / counts[i];
+          double yearMin = minTemps[i] / counts[i];
+          fprintf(Q8_outFile, "%d %f %f %f\n", 1850 + i, yearAvg, yearMax, yearMin);
+      }
+
+    }
+
+    fclose(Q8_outFile); // Close the file.
+    printf("-> Yearly Average temperature, Max Temperature, Min Temperature insights ready \nfor exploration in 'Q8_Temperature_averages.txt'.\n");
+
+
+    // Question 9: Calculate the average temperature for each century and write them to a file.
+
+    printf("\n------------------ Question 9 ----------------------\n");
+    FILE* Q9_outFile = fopen("Q9_Century_averages.txt", "w");
+    if (!Q9_outFile) {
+      printf("Error opening output file.\n");
+      return -1;
+    }
+
+    fprintf(Q9_outFile, "Century Avg      Max       Min\n"); // Write header to file.
+    for (int i = 0; i < 3; i++) {
+        if (centuryCounts[i] > 0) {
+            // Calculate the average for each century.
+            double centuryAvg = centuryAvgTemp[i] / centuryCounts[i];
+            double centuryMax = centuryMaxTemp[i] / centuryCounts[i];
+            double centuryMin = centuryMinTemp[i] / centuryCounts[i];
+            fprintf(Q9_outFile, "%dth    %f %f %f\n", 19 + i, centuryAvg, centuryMax, centuryMin);
+        }
+    }
+    fclose(Q9_outFile); // Close the file.
+    printf("-> Yearly Average temperature, Max Temperature, Min Temperature insights ready \nfor exploration in 'Q9_Century_averages.txt'.\n");
+
+    // ++++++++++++++++++++++++++++++++ Question 10 & 11 ++++++++++++++++++++++++++++++++++
+    printf("\n------------------ Question 10 ----------------------\n");
+    FILE *fp, *out;
+    int year, month;
+    double temp, uncertainty;
+    double sumTemp[12] = {0}, sumUncertainty[12] = {0};
+    int count[12] = {0};
+    fp = fopen("GlobalTemperatures.csv", "r");
+    if (!fp) {
+        perror("Unable to open input file");
+        return EXIT_FAILURE;
+    }
+
+    out = fopen("Q10_AVG_LandTemp_Monthly.txt", "w");
+    if (!out) {
+        perror("Unable to create output file");
+        fclose(fp); // Ensure the input file is closed if opening the output file fails
+        return EXIT_FAILURE;
+    }
+
+    // Skip the CSV header line
+    fgets(line, sizeof(line), fp);
+
+    // Process each line in the file
+    while (fgets(line, sizeof(line), fp)) {
+        // Parse year, month, temperature, and uncertainty from each line
+        if (sscanf(line, "%d-%d-%*d,%lf,%lf", &year, &month, &temp, &uncertainty) == 4) {
+            // Check if the year is within the desired range
+            if (year >= 2000 && year <= 2015) {
+                sumTemp[month - 1] += temp; // Accumulate temperature sums by month
+                sumUncertainty[month - 1] += uncertainty; // Accumulate uncertainty sums by month
+                count[month - 1]++; // Increment count for the month
+            }
+        }
+    }
+
+    // Calculate and write the averages to the output file
+    for (month = 0; month < 12; month++) {
+        if (count[month] > 0) {
+            // Calculate the average temperature and uncertainty for each month
+            double avgTemp = sumTemp[month] / count[month];
+            double avgUncertainty = sumUncertainty[month] / count[month];
+            // Write the results to the output file
+            fprintf(out, "%d %lf %lf\n", month + 1, avgTemp, avgUncertainty);
+        }
+    }
+
+    fclose(fp);
+    fclose(out);
+
+    printf("-> Data for GNUPlot prepared in 'Q10_AVG_LandTemp_Monthly.txt'  .\n");
+
+    // Question 11: Calculate the average temperature for each century and write them to a file.
+
+       printf("\n------------------ Question 11 ----------------------\n");
+        FILE *Q11fp = fopen("GlobalTemperatures.csv", "r");
+        FILE *Q11out = fopen("Q11_AVG_LandTemp_Yearly.txt", "w");
+
+        int year_1;
+        double landTemp, landOceanTemp;
+        int currentYear = 1850, yearCount = 0;
+        double sumLandTemp = 0, sumLandOceanTemp = 0;
+
+        if (!Q11fp) {
+            printf("Error opening input file.\n");
+            return EXIT_FAILURE;
+        }
+        if (!Q11out) {
+            printf("Error opening output file.\n");
+            fclose(Q11fp);
+            return EXIT_FAILURE;
+        }
+
+        // Skip the header
+        fgets(line, 1024, Q11fp);
+
+        while (fgets(line, 1024, Q11fp)) {
+            sscanf(line, "%4d", &year_1);
+            if (year_1 >= 1850 && year_1 <= 2015) {
+                // The format string now skips 5 columns before reading the landOceanTemp value
+                sscanf(line, "%*[^,],%lf,%*[^,],%*[^,],%*[^,],%*[^,],%*[^,],%lf", &landTemp, &landOceanTemp);
+                if (year_1 == currentYear) {
+                    sumLandTemp += landTemp;
+                    sumLandOceanTemp += landOceanTemp;
+                    yearCount++;
+                } else {
+                    if (yearCount > 0) { // To handle the first transition without division by zero
+                        fprintf(Q11out, "%d %f %f\n", currentYear, sumLandTemp / yearCount, sumLandOceanTemp / yearCount);
+                    }
+                    currentYear = year_1;
+                    sumLandTemp = landTemp;
+                    sumLandOceanTemp = landOceanTemp;
+                    yearCount = 1;
+                }
+            }
+        }
+
+        // Handle the last year
+        if (yearCount > 0) {
+            fprintf(Q11out, "%d %f %f\n", currentYear, sumLandTemp / yearCount, sumLandOceanTemp / yearCount);
+        }
+
+        fclose(Q11fp);
+        fclose(Q11out);
+
+        printf("-> Data for GNUPlot prepared in 'Q11_AVG_LandTemp_Yearly.txt'  .\n");
+
+
+
+
+  return 0;
+}
+// END OF MAIN
