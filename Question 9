@@ -1,0 +1,44 @@
+#Question 9
+#GNUPplot Graph of the average, low and high temperatures for each of the three centuries
+
+#Setting the Names of the Title, X-Axis, and Y-Axis and Selecting the settings and layouts of the graph
+set title "Temperature Statistics by Century"
+set xlabel "Century"
+set ylabel "Temperature"
+set boxwidth 1
+set style fill solid
+set grid
+
+# set multiplot
+set multiplot layout 1,3 title "Temperature Statistics by Century"
+
+# Colors for each century
+color_19th = "#8ddb63"
+color_20th = "#fa6b3c"
+color_21st = "#78a6f0"
+
+# Subplot 1 - Minimum Temperature
+set title "Minimum Temperature"
+set xrange [18:22]
+set yrange [0:16]
+plot 'Q9_Century_averages.txt' using 1:($1 == 19 ? $4 : NaN):xtic(1) with boxes lc rgb color_19th notitle, \
+     '' using 1:($1 == 20 ? $4 : NaN):xtic(1) with boxes lc rgb color_20th notitle, \
+     '' using 1:($1 == 21 ? $4 : NaN):xtic(1) with boxes lc rgb color_21st notitle
+
+# Subplot 2 - Average Temperature
+set title "Average Temperature"
+set xrange [18:22]
+set yrange [0:16]
+plot 'Q9_Century_averages.txt' using 1:($1 == 19 ? $2 : NaN):xtic(1) with boxes lc rgb color_19th notitle, \
+     '' using 1:($1 == 20 ? $2 : NaN):xtic(1) with boxes lc rgb color_20th notitle, \
+     '' using 1:($1 == 21 ? $2 : NaN):xtic(1) with boxes lc rgb color_21st notitle
+
+# Subplot 3 - Maximum Temperature
+set title "Maximum Temperature"
+set xrange [18:22]
+set yrange [0:16]
+plot 'Q9_Century_averages.txt' using 1:($1 == 19 ? $3 : NaN):xtic(1) with boxes lc rgb color_19th notitle, \
+     '' using 1:($1 == 20 ? $3 : NaN):xtic(1) with boxes lc rgb color_20th notitle, \
+     '' using 1:($1 == 21 ? $3 : NaN):xtic(1) with boxes lc rgb color_21st notitle
+
+unset multiplot
