@@ -1,0 +1,16 @@
+#Question 6
+#GNUPplot graph of the yearly temperatures for the years 1760 to 2015
+
+#Setting the Names of the Title, X-Axis, and Y-Axis
+set title "Yearly Average Temperatures (1760-2015)"
+set xlabel "Year"
+set ylabel "Average Temperature (°C)"
+
+#Setting the range of the X-Axis, so that it starts at the start year of the data file and ends at the end year of the data file 
+set xrange [1760:2015]
+
+#Selecting the settings of the line style
+set style line 1 lc rgb 'blue'
+
+#Plotting the data by reading the values on the second column of the data file and applying the line style with labeling the data within a legend
+plot 'Q1_Yearly_averages.txt' using 1:2 with lines linestyle 1 lw 2 title "Average Temperature"
